@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Dados reais da empresa: nunca versionar
+classificacoes.xlsx
+*Realizados*.xlsx
+*Compromisso*.xlsx
+*_para_classificar.xlsx
+dados/
