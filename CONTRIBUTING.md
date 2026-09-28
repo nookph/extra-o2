@@ -26,8 +26,8 @@ sap_upg/
   appdata.py  # onde a interface gráfica guarda a última pasta/arquivo usados
 
 Abrir_Classificador_UPG.bat / .pyw   # atalhos de duplo clique para abrir a GUI
-Instalar_Dependencias.bat            # instala pandas/openpyxl com duplo clique
-requirements.txt                     # dependências Python (só pandas + openpyxl)
+Instalar_Dependencias.bat            # instala Python (se faltar) e as dependências, com duplo clique
+requirements.txt                     # dependências Python (pandas, openpyxl, ttkbootstrap)
 ```
 
 Regra importante para quem for mexer: **toda a lógica de negócio mora em
@@ -97,7 +97,20 @@ STATUS_PENDENTE = "PENDENTE"
 PENDENTE_FILL = PatternFill(start_color="FFF2CC", ...)  # cor de destaque das linhas pendentes
 ```
 
-### 5. Adicionar um terceiro relatório do SAP (além de Realizados/Compromisso)
+### 5. Atualizar a versão do Python instalada automaticamente
+
+Onde: topo de `Instalar_Dependencias.bat`:
+
+```bat
+set "PY_VERSION=3.12.7"
+```
+
+Esse é o Python baixado automaticamente de python.org quando a máquina não
+tem Python instalado. Troque só esse número para atualizar (confira antes
+em https://www.python.org/downloads/windows/ se existe instalador
+`amd64.exe` para a versão escolhida).
+
+### 6. Adicionar um terceiro relatório do SAP (além de Realizados/Compromisso)
 
 Não é um caso trivial, mas o caminho é: em `executar_preparar` (`core.py`),
 a lista `especificacoes` monta um item por relatório — adicionar um

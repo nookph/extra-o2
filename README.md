@@ -38,10 +38,14 @@ não deveria estar ali).
 
 ## Instalação
 
-Sem terminal: clique duas vezes em **`Instalar_Dependencias.bat`**. Ele
-verifica se o Python está instalado (e explica como instalar caso não
-esteja) e instala pandas/openpyxl sozinho — só precisa fazer isso uma vez,
-na máquina de quem vai usar o programa.
+Sem terminal: clique duas vezes em **`Instalar_Dependencias.bat`**. Se o
+Python ainda não estiver instalado nessa máquina, ele baixa e instala
+sozinho (só para o usuário atual, sem precisar de administrador) e depois
+instala pandas/openpyxl/ttkbootstrap — só precisa fazer isso uma vez, na
+máquina de quem vai usar o programa. Se a instalação automática do Python
+não funcionar (ex: sem internet, ou política de TI bloqueando o download),
+o script avisa e explica como instalar manualmente em
+https://www.python.org/downloads/.
 
 Se preferir pela linha de comando:
 
@@ -60,10 +64,10 @@ Tem uma versão com janela e botões, sem precisar abrir CMD/PowerShell:
   - Uma área de mensagens mostra o mesmo progresso do modo linha de comando (quantas linhas de UPG, quantas herdadas, avisos).
   - A planilha gerada abre sozinha ao terminar, e o programa lembra a última pasta/arquivo usados — do segundo mês em diante é só conferir e clicar.
 
-Pré-requisito: a pessoa que vai usar esse atalho precisa ter Python
-instalado na máquina e ter rodado o `Instalar_Dependencias.bat` (ou o
-`pip install` acima) uma vez — o `.bat`/`.pyw` da interface só abre a
-janela, sem terminal visível.
+Pré-requisito: a pessoa que vai usar esse atalho precisa ter rodado o
+`Instalar_Dependencias.bat` uma vez antes (ele mesmo cuida de instalar o
+Python, se precisar) — o `.bat`/`.pyw` da interface só abre a janela, sem
+terminal visível.
 
 **Este é o caminho recomendado em ambiente corporativo.** Diferente de um
 `.exe`, o `.bat`/`.pyw` não é um programa novo e desconhecido — ele só
@@ -173,7 +177,7 @@ sap_upg/
   gui.py      # interface gráfica (Tkinter) para quem não usa terminal
   appdata.py  # guarda a última pasta/arquivo usados pela interface gráfica
 Abrir_Classificador_UPG.bat / .pyw   # atalhos para abrir a interface gráfica com duplo clique
-Instalar_Dependencias.bat            # instala pandas/openpyxl com duplo clique (rodar uma vez)
+Instalar_Dependencias.bat            # instala Python (se faltar) e as dependências, com duplo clique (rodar uma vez)
 ```
 
 ## Próximos ajustes possíveis
