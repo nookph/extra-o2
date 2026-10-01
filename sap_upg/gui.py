@@ -19,12 +19,40 @@ import tkinter as tk
 from datetime import date
 from pathlib import Path
 from typing import Callable
-
-import ttkbootstrap as ttb
-from ttkbootstrap.constants import BOTH, LEFT, PRIMARY, SECONDARY, SUCCESS, X
 from tkinter import filedialog, messagebox
 
-from . import appdata, core
+
+def _avisar_erro_fatal(titulo: str, mensagem: str) -> None:
+    """Mostra uma janela de erro usando só tkinter puro (sem ttkbootstrap).
+
+    Os atalhos de duplo clique abrem via `pythonw`, que não tem janela de
+    console: se uma dependência não estiver instalada, o programa some sem
+    deixar rastro nenhum. Por isso, qualquer falha logo na importação ou na
+    inicialização precisa aparecer aqui, numa janela própria, em vez de só
+    fechar sozinho.
+    """
+    raiz = tk.Tk()
+    raiz.withdraw()
+    messagebox.showerror(titulo, mensagem)
+    raiz.destroy()
+
+
+try:
+    import ttkbootstrap as ttb
+    from ttkbootstrap.constants import BOTH, LEFT, PRIMARY, SECONDARY, SUCCESS, X
+
+    from . import appdata, core
+except ImportError as _exc:
+    _avisar_erro_fatal(
+        "Classificador de UPG — dependência faltando",
+        "Não consegui abrir o programa porque uma dependência do Python "
+        "não está instalada corretamente:\n\n"
+        f"{_exc}\n\n"
+        "Rode de novo o 'Instalar_Dependencias.bat' (duplo clique) e "
+        "confira se ele termina sem mensagens em vermelho antes de "
+        "tentar abrir o programa de novo.",
+    )
+    sys.exit(1)
 
 TEMA = "litera"
 
@@ -381,8 +409,14 @@ class App(ttb.Window):
 
 
 def main() -> None:
-    app = App()
-    app.mainloop()
+    try:
+        app = App()
+        app.mainloop()
+    except Exception as exc:  # noqa: BLE001 - mostrado direto para o usuário final
+        _avisar_erro_fatal(
+            "Classificador de UPG — erro ao abrir",
+            f"O programa fechou por causa de um erro inesperado:\n\n{exc}",
+        )
 
 
 if __name__ == "__main__":

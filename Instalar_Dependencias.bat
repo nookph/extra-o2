@@ -84,6 +84,17 @@ if errorlevel 1 (
     echo.
     echo ===============================================
     echo  Ocorreu um erro durante a instalacao.
+    echo.
+    echo  Causas comuns:
+    echo  - Sem internet no momento, ou PyPI bloqueado pelo proxy da empresa.
+    echo  - Seguranca de rede corporativa interceptando o HTTPS ^(ex:
+    echo    Netskope, Zscaler^) e o Python nao reconhecendo o certificado
+    echo    dela. Aparece como erro mencionando "TLS CA certificate" ou
+    echo    um caminho dentro de C:\WINDOWS\IMECache\. Nesse caso, fale
+    echo    com a TI: eh uma configuracao do certificado nessa maquina,
+    echo    nao um problema deste programa.
+    echo  - Pouco espaco em disco.
+    echo.
     echo  Copie a mensagem acima e peca ajuda.
     echo ===============================================
     pause
