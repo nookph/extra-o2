@@ -177,6 +177,32 @@ def _resolver_nome_coluna(columns: list[str], nome_desejado: str) -> str | None:
     return None
 
 
+_PADRAO_COLUNA_SEM_NOME = re.compile(r"^unnamed:\s*\d+$", re.IGNORECASE)
+
+
+def _remover_colunas_fantasmas(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove colunas sem cabeçalho de texto (nome em branco, "nan" ou
+    "Unnamed: N" gerado pelo pandas para célula de cabeçalho vazia).
+
+    Exportações do SAP às vezes incluem milhares de colunas extras sem
+    cabeçalho — um artefato da formatação do export (qualquer resquício de
+    valor/estilo bem lá no fim da planilha faz o pandas manter todas as
+    colunas sem nome no meio do caminho também). Mantidas, elas podem
+    estourar o limite de 16384 colunas do Excel na hora de salvar o
+    arquivo de trabalho. Como o programa só acessa colunas pelo nome (nunca
+    por posição), uma coluna sem nome nunca poderia ser usada de qualquer
+    forma — removê-la não tem efeito nenhum na lógica de negócio."""
+
+    colunas_manter = []
+    for coluna in df.columns:
+        nome = str(coluna).strip()
+        sem_nome = nome == "" or nome.lower() == "nan" or _PADRAO_COLUNA_SEM_NOME.match(nome)
+        if sem_nome:
+            continue
+        colunas_manter.append(coluna)
+    return df[colunas_manter]
+
+
 def carregar_planilha(spec: ReportSpec) -> tuple[pd.DataFrame, str, str]:
     """Lê a planilha e resolve os nomes reais das colunas OBJETO e PO
     (ignorando maiúsculas/minúsculas). Retorna (dataframe, coluna_objeto,
@@ -185,6 +211,7 @@ def carregar_planilha(spec: ReportSpec) -> tuple[pd.DataFrame, str, str]:
     if not spec.caminho.exists():
         raise FileNotFoundError(f"Arquivo não encontrado: {spec.caminho}")
     df = pd.read_excel(spec.caminho, sheet_name=spec.aba, header=spec.linha_cabecalho, dtype=object)
+    df = _remover_colunas_fantasmas(df)
 
     coluna_objeto = _resolver_nome_coluna(list(df.columns), spec.coluna_objeto)
     if coluna_objeto is None:
