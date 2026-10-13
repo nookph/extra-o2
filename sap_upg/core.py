@@ -113,7 +113,7 @@ def _find_column(columns: list[str], candidates: list[str]) -> str | None:
     contenha algum dos textos candidatos. Retorna None se não achar exatamente
     uma correspondência (nenhuma ou mais de uma)."""
 
-    normalized = {c: c.strip().lower() for c in columns}
+    normalized = {c: str(c).strip().lower() for c in columns}
     matches = [
         original
         for original, low in normalized.items()
@@ -143,7 +143,7 @@ def _resolver_nome_coluna(columns: list[str], nome_desejado: str) -> str | None:
 
     alvo = nome_desejado.strip().lower()
     for coluna in columns:
-        if coluna.strip().lower() == alvo:
+        if str(coluna).strip().lower() == alvo:
             return coluna
     return None
 
