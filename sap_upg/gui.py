@@ -15,6 +15,7 @@ import os
 import queue
 import sys
 import threading
+import traceback
 import tkinter as tk
 from datetime import date
 from pathlib import Path
@@ -354,7 +355,7 @@ class App(ttb.Window):
                 )
                 self._enfileirar(lambda: self._abrir_arquivo(caminho_gerado))
             except Exception as exc:  # noqa: BLE001 - mostrado direto para o usuário final
-                self._log(f"ERRO: {exc}")
+                self._log(f"ERRO: {exc}\n{traceback.format_exc()}")
                 self._enfileirar(lambda exc=exc: messagebox.showerror("Erro ao gerar planilha", str(exc)))
             finally:
                 self._processando = False
@@ -392,7 +393,7 @@ class App(ttb.Window):
                     )
                 )
             except Exception as exc:  # noqa: BLE001 - mostrado direto para o usuário final
-                self._log(f"ERRO: {exc}")
+                self._log(f"ERRO: {exc}\n{traceback.format_exc()}")
                 self._enfileirar(
                     lambda exc=exc: messagebox.showerror("Erro ao salvar classificações", str(exc))
                 )
