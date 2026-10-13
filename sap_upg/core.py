@@ -258,6 +258,12 @@ def aplicar_classificacoes(df: pd.DataFrame, coluna_po: str, banco: pd.DataFrame
 
 
 def _formatar_aba(ws: Worksheet, df: pd.DataFrame, coluna_status: str = "Status") -> None:
+    # Garante que toda aba gerada pelo programa fique visível. Uma aba
+    # oculta por engano (ex: biblioteca de terceiros, versão diferente do
+    # Excel/openpyxl) faz o openpyxl recusar salvar o arquivo com
+    # "At least one sheet must be visible" caso todas as abas acabem ocultas.
+    ws.sheet_state = "visible"
+
     for col_idx, nome_coluna in enumerate(df.columns, start=1):
         cell = ws.cell(row=1, column=col_idx)
         cell.fill = HEADER_FILL
