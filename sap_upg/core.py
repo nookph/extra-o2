@@ -182,22 +182,24 @@ _PADRAO_COLUNA_SEM_NOME = re.compile(r"^unnamed:\s*\d+$", re.IGNORECASE)
 
 def _remover_colunas_fantasmas(df: pd.DataFrame) -> pd.DataFrame:
     """Remove colunas sem cabeçalho de texto (nome em branco, "nan" ou
-    "Unnamed: N" gerado pelo pandas para célula de cabeçalho vazia).
+    "Unnamed: N" gerado pelo pandas) que também estão 100% vazias.
 
     Exportações do SAP às vezes incluem milhares de colunas extras sem
-    cabeçalho — um artefato da formatação do export (qualquer resquício de
-    valor/estilo bem lá no fim da planilha faz o pandas manter todas as
-    colunas sem nome no meio do caminho também). Mantidas, elas podem
-    estourar o limite de 16384 colunas do Excel na hora de salvar o
-    arquivo de trabalho. Como o programa só acessa colunas pelo nome (nunca
-    por posição), uma coluna sem nome nunca poderia ser usada de qualquer
-    forma — removê-la não tem efeito nenhum na lógica de negócio."""
+    cabeçalho até o fim da planilha — um artefato da formatação do export
+    (qualquer resquício de valor/estilo bem lá no fim faz o pandas manter
+    todas as colunas sem nome no meio do caminho também, mesmo vazias).
+    Mantidas, elas podem estourar o limite de 16384 colunas do Excel na
+    hora de salvar o arquivo de trabalho.
+
+    Só remove quando a coluna está mesmo vazia (nenhum valor em nenhuma
+    linha) — uma coluna sem cabeçalho mas com dado de verdade em alguma
+    linha é sempre preservada, mesmo sem poder ser encontrada por nome."""
 
     colunas_manter = []
     for coluna in df.columns:
         nome = str(coluna).strip()
         sem_nome = nome == "" or nome.lower() == "nan" or _PADRAO_COLUNA_SEM_NOME.match(nome)
-        if sem_nome:
+        if sem_nome and df[coluna].isna().all():
             continue
         colunas_manter.append(coluna)
     return df[colunas_manter]
