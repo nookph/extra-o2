@@ -126,7 +126,13 @@ class App(ttb.Window):
 
         self.var_pasta = tk.StringVar(value=self._config.get("pasta", str(Path.home())))
         self._linha_arquivo(
-            etapa1, "Pasta com os 2 arquivos do SAP", self.var_pasta, self._escolher_pasta
+            etapa1,
+            "Pasta com os 2 arquivos do SAP",
+            self.var_pasta,
+            self._escolher_pasta,
+            dica="O seletor de pasta não mostra arquivos dentro dela, só outras pastas "
+            "— isso é normal. Escolha a pasta certa e clique em \"Selecionar pasta\" "
+            "mesmo sem ver os Excel listados ali.",
         )
 
         nome_sugerido = f"UPG_{date.today().strftime('%Y-%m')}_para_classificar.xlsx"
@@ -192,7 +198,7 @@ class App(ttb.Window):
         for tag, cor in (("sucesso", "#2fa84f"), ("erro", "#d9534f"), ("info", "#6c757d")):
             self.txt_log.text.tag_configure(tag, foreground=cor)
 
-    def _linha_arquivo(self, container, rotulo, variavel, comando_procurar) -> None:
+    def _linha_arquivo(self, container, rotulo, variavel, comando_procurar, dica: str | None = None) -> None:
         linha = ttb.Frame(container)
         linha.pack(fill=X, pady=4)
         ttb.Label(linha, text=rotulo, bootstyle=SECONDARY).pack(anchor="w")
@@ -204,6 +210,11 @@ class App(ttb.Window):
         ttb.Button(
             sublinha, text="Procurar...", command=comando_procurar, bootstyle=f"{SECONDARY}-outline"
         ).pack(side=LEFT)
+
+        if dica:
+            ttb.Label(
+                linha, text=dica, bootstyle=SECONDARY, font=("Segoe UI", 8), wraplength=680
+            ).pack(anchor="w", pady=(2, 0))
 
     # ------------------------------------------------------------------ #
     # Seletores de arquivo/pasta
