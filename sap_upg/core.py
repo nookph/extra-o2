@@ -18,6 +18,8 @@ de Python.
 from __future__ import annotations
 
 import datetime as dt
+import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -108,16 +110,32 @@ def localizar_arquivo_por_padrao(pasta: Path, padrao: str, log: LogFn = print) -
     return escolhido
 
 
-def _find_column(columns: list[str], candidates: list[str]) -> str | None:
-    """Procura, sem diferenciar maiúsculas/minúsculas, uma coluna cujo nome
-    contenha algum dos textos candidatos. Retorna None se não achar exatamente
-    uma correspondência (nenhuma ou mais de uma)."""
+def _normalizar_texto_coluna(texto) -> str:
+    """Normaliza um nome de coluna para comparação tolerante a pequenas
+    variações de formatação entre exportações do SAP: acentos, "º"/"°",
+    pontuação (pontos, hífens) e espaços duplicados não deveriam impedir o
+    programa de achar a coluna certa. Não cobre mudanças de palavra (ex:
+    "Documento" virar "Doc.") — só variação de formatação do mesmo nome."""
 
-    normalized = {c: str(c).strip().lower() for c in columns}
+    texto = str(texto).strip().lower()
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
+    texto = texto.replace("º", "o").replace("°", "o")
+    texto = re.sub(r"[^a-z0-9]+", " ", texto)
+    return texto.strip()
+
+
+def _find_column(columns: list[str], candidates: list[str]) -> str | None:
+    """Procura, sem diferenciar maiúsculas/minúsculas, acentos ou pontuação,
+    uma coluna cujo nome contenha algum dos textos candidatos. Retorna None
+    se não achar exatamente uma correspondência (nenhuma ou mais de uma)."""
+
+    normalized = {c: _normalizar_texto_coluna(c) for c in columns}
+    candidatos_normalizados = [_normalizar_texto_coluna(cand) for cand in candidates]
     matches = [
         original
-        for original, low in normalized.items()
-        if any(cand.lower() in low for cand in candidates)
+        for original, normalizado in normalized.items()
+        if any(cand in normalizado for cand in candidatos_normalizados)
     ]
     if len(matches) == 1:
         return matches[0]
@@ -137,13 +155,24 @@ def sugerir_coluna_po(df: pd.DataFrame) -> str | None:
 
 def _resolver_nome_coluna(columns: list[str], nome_desejado: str) -> str | None:
     """Encontra o nome exato de uma coluna (preservando a capitalização real
-    usada na planilha), sem diferenciar maiúsculas/minúsculas nem espaços nas
-    pontas. O SAP não é consistente entre exportações (ex: 'OBJETO' numa
-    planilha e 'Objeto' na outra)."""
+    usada na planilha), tolerando pequenas variações de formatação do SAP
+    entre exportações: maiúscula/minúscula, acentos, "º"/"°", pontuação e
+    espaços nas pontas ou duplicados (ex: 'Nº doc.de referência' casa com
+    'N° Doc. De Referência' ou 'no doc de referencia').
+
+    Primeiro tenta um match exato (mais prático e previsível); só cai para a
+    versão normalizada se não achar exatamente. Não tenta adivinhar nomes
+    totalmente diferentes (ex: uma palavra abreviada) — nesse caso, quem for
+    mexer no projeto precisa atualizar o nome padrão (ver CONTRIBUTING.md)."""
 
     alvo = nome_desejado.strip().lower()
     for coluna in columns:
         if str(coluna).strip().lower() == alvo:
+            return coluna
+
+    alvo_normalizado = _normalizar_texto_coluna(nome_desejado)
+    for coluna in columns:
+        if _normalizar_texto_coluna(coluna) == alvo_normalizado:
             return coluna
     return None
 
