@@ -196,7 +196,12 @@ class App(ttb.Window):
         self.txt_log = ttb.ScrolledText(etapa3, height=12, wrap="word", auto_hide=True)
         self.txt_log.pack(fill=BOTH, expand=True)
         self.txt_log.text.configure(state="disabled")
-        for tag, cor in (("sucesso", "#2fa84f"), ("erro", "#d9534f"), ("info", "#6c757d")):
+        for tag, cor in (
+            ("sucesso", "#2fa84f"),
+            ("erro", "#d9534f"),
+            ("aviso", "#c77700"),
+            ("info", "#6c757d"),
+        ):
             self.txt_log.text.tag_configure(tag, foreground=cor)
 
     def _linha_arquivo(self, container, rotulo, variavel, comando_procurar, dica: str | None = None) -> None:
@@ -278,6 +283,8 @@ class App(ttb.Window):
         tag = "info"
         if mensagem.startswith("ERRO"):
             tag = "erro"
+        elif mensagem.startswith("AVISO"):
+            tag = "aviso"
         elif "sucesso" in mensagem.lower() or "salva" in mensagem.lower():
             tag = "sucesso"
         self.txt_log.text.configure(state="normal")
@@ -380,7 +387,7 @@ class App(ttb.Window):
 
         def tarefa() -> None:
             try:
-                _, alterados, total = core.executar_consolidar(
+                _, alterados, total, conflitos = core.executar_consolidar(
                     trabalho=trabalho, banco=banco, log=self._log
                 )
                 self._salvar_config(banco=banco)
@@ -392,6 +399,15 @@ class App(ttb.Window):
                         f"Total de POs no banco: {total}",
                     )
                 )
+                if conflitos:
+                    self._enfileirar(
+                        lambda: messagebox.showwarning(
+                            "PO com classificações diferentes",
+                            f"{len(conflitos)} PO(s) apareceram com classificação diferente em "
+                            "linhas diferentes desta planilha — só a última ficou salva no banco.\n\n"
+                            "Veja a lista completa na área de Mensagens e confira se está certo.",
+                        )
+                    )
             except Exception as exc:  # noqa: BLE001 - mostrado direto para o usuário final
                 self._log(f"ERRO: {exc}\n{traceback.format_exc()}")
                 self._enfileirar(

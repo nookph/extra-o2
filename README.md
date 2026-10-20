@@ -184,7 +184,14 @@ Instalar_Dependencias.bat            # instala Python (se faltar) e as dependên
 
 - Se o mesmo PO puder legitimamente precisar de classificações diferentes
   em linhas diferentes (ex: parcelado por item/centro de custo), a chave de
-  match precisa deixar de ser só o PO — hoje o desenho assume PO único.
+  match precisa deixar de ser só o PO — hoje o desenho assume PO único. Como
+  proteção preventiva, o `consolidar` já avisa (mensagem laranja + popup) se
+  detectar o mesmo PO com classificação diferente em linhas diferentes da
+  mesma planilha — mas continua salvando só a última classificação
+  encontrada. Se esses avisos passarem a aparecer com frequência, é sinal de
+  que vale fazer essa mudança maior (a coluna de **Valor/moeda ACC** foi
+  identificada como provável candidata para compor a chave, já que torna
+  cada item praticamente único).
 
 ## Manutenção e customização
 
