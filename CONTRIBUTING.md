@@ -132,7 +132,15 @@ parte. Depois é só expor os novos parâmetros em `cli.py`
   que um PO nunca precisa de duas classificações diferentes ao mesmo tempo.
   Se isso deixar de ser verdade (ex: parcelado por item/centro de custo),
   a chave em `aplicar_classificacoes`/`consolidar_no_banco` precisa virar
-  composta (PO + outra coluna), e isso teria efeito em várias funções.
+  composta (PO + outra coluna), e isso teria efeito em várias funções. A
+  coluna **Valor/moeda ACC** foi apontada como provável candidata pra
+  compor essa chave, já que na prática torna cada item quase único.
+  Como proteção enquanto isso não é feito, `consolidar_no_banco` detecta
+  (dentro de uma mesma rodada de consolidação) quando o mesmo PO aparece
+  com classificação diferente em linhas diferentes e avisa em vez de
+  sobrescrever em silêncio — mas a sobrescrita (só a última classificação
+  processada fica salva) continua acontecendo, o aviso só evita que passe
+  despercebido.
 - **A GUI nunca chama métodos da janela de dentro da thread de trabalho**:
   o Tkinter não é seguro para isso (já causou um bug real durante o
   desenvolvimento — "main thread is not in main loop"). Toda comunicação

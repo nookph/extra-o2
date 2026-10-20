@@ -347,11 +347,24 @@ def consolidar_no_banco(
     caminho_trabalho: Path,
     caminho_banco: Path,
     coluna_po_por_aba: dict[str, str],
-) -> tuple[pd.DataFrame, int]:
+    log: LogFn = print,
+) -> tuple[pd.DataFrame, int, list[str]]:
     """Lê o Excel de trabalho já classificado manualmente e faz upsert das
     classificações preenchidas no banco persistente.
 
-    Retorna o banco atualizado e a quantidade de POs novos/alterados.
+    Retorna o banco atualizado, a quantidade de POs novos/alterados, e uma
+    lista de avisos de conflito (mesmo PO com classificação diferente em
+    linhas diferentes nesta mesma planilha — ver nota abaixo).
+
+    IMPORTANTE — limitação conhecida: a chave de reaproveitamento é só o
+    número do PO. Se o mesmo PO legitimamente precisar de classificações
+    diferentes em linhas diferentes (ex: parcelado por item/centro de
+    custo), a última linha processada "vence" e sobrescreve as anteriores
+    no banco. Isso aqui só avisa quando detecta esse caso dentro de uma
+    mesma rodada — não impede a sobrescrita, porque mudar a chave de
+    verdade (ex: para PO + centro de custo) exigiria redesenhar o banco e
+    não é trivial (ver CONTRIBUTING.md). Se os avisos começarem a aparecer
+    com frequência, é sinal de que vale fazer essa mudança maior.
     """
 
     banco = carregar_banco(caminho_banco)
@@ -361,6 +374,8 @@ def consolidar_no_banco(
 
     agora = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     alterados = 0
+    vistos_nesta_rodada: dict[str, tuple[str, str]] = {}
+    conflitos: list[str] = []
 
     for nome_aba, coluna_po in coluna_po_por_aba.items():
         df = pd.read_excel(caminho_trabalho, sheet_name=nome_aba, dtype=object)
@@ -381,6 +396,14 @@ def consolidar_no_banco(
             observacao = linha.get("Observacao")
             observacao = "" if pd.isna(observacao) else str(observacao).strip()
 
+            anterior = vistos_nesta_rodada.get(po)
+            if anterior is not None and anterior[0] != classificacao:
+                conflitos.append(
+                    f"PO {po}: '{anterior[0]}' (em {anterior[1]}) x '{classificacao}' (em {nome_aba}) "
+                    f"— ficou valendo '{classificacao}'"
+                )
+            vistos_nesta_rodada[po] = (classificacao, nome_aba)
+
             existente = banco_indexado.loc[po] if po in banco_indexado.index else None
             mudou = (
                 existente is None
@@ -395,10 +418,18 @@ def consolidar_no_banco(
                 }
                 alterados += 1
 
+    if conflitos:
+        log(
+            "AVISO: o mesmo PO apareceu com classificação diferente em linhas "
+            "diferentes desta planilha (só a última ficou salva no banco):"
+        )
+        for conflito in conflitos:
+            log(f"  - {conflito}")
+
     banco_final = banco_indexado.reset_index().rename(columns={"index": "PO"})
     banco_final = banco_final[DB_COLUMNS]
     banco_final = banco_final.sort_values("PO").reset_index(drop=True)
-    return banco_final, alterados
+    return banco_final, alterados, conflitos
 
 
 def salvar_banco(banco: pd.DataFrame, caminho: Path) -> None:
@@ -479,22 +510,24 @@ def executar_consolidar(
     po_col_compromisso: str = DEFAULT_PO_COL_COMPROMISSO,
     banco: str = str(DEFAULT_BANCO),
     log: LogFn = print,
-) -> tuple[Path, int, int]:
+) -> tuple[Path, int, int, list[str]]:
     """Fluxo completo do comando 'consolidar': lê o Excel de trabalho já
     classificado manualmente e grava as classificações novas/alteradas no
-    banco. Retorna (caminho_do_banco, quantidade_alterada, total_no_banco)."""
+    banco. Retorna (caminho_do_banco, quantidade_alterada, total_no_banco,
+    avisos_de_conflito)."""
 
     coluna_po_por_aba = {
         ABA_REALIZADOS: po_col_realizados,
         ABA_COMPROMISSO: po_col_compromisso,
     }
-    banco_atualizado, alterados = consolidar_no_banco(
+    banco_atualizado, alterados, conflitos = consolidar_no_banco(
         caminho_trabalho=Path(trabalho),
         caminho_banco=Path(banco),
         coluna_po_por_aba=coluna_po_por_aba,
+        log=log,
     )
     salvar_banco(banco_atualizado, Path(banco))
     log(f"Banco atualizado: {Path(banco).resolve()}")
     log(f"{alterados} classificação(ões) nova(s) ou alterada(s) salvas.")
     log(f"Total de POs no banco: {len(banco_atualizado)}")
-    return Path(banco), alterados, len(banco_atualizado)
+    return Path(banco), alterados, len(banco_atualizado), conflitos
